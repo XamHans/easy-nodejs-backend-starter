@@ -2,23 +2,36 @@
 
 A docker-compose project with these servers:
   * webserver -- an nginx reverse proxy HTTPS server
-  * therahermnodejs -- a node express webserver for the domain newdevsontheblock.com (change to your own domain name)
+  * newdevsontheblock -- a node express webserver for the domain newdevsontheblock.com (change to your own domain name)
   * certbot -- the certbot utility, which talks to [letsencrypt.org](https://letsencrypt.org) to automate the process of obtaining and renewing HTTPS certificates
   
-This project is based on an excellent [Digital Ocean tutorial](https://www.digitalocean.com/community/tutorials/how-to-secure-a-containerized-node-js-application-with-nginx-let-s-encrypt-and-docker-compose) by Kathleen Juell, so go there for details.
 
-## Notes
-* change all occurrences of therapeutichermeneutic.org or theraherm to your own domain name
-* `mkdir dhparam`, and create your own TLS certificate
 
-      sudo openssl dhparam -out ./dhparam/example-dhparam-2048.pem 2048
-* there is a directory called `tempconf` which has alternate versions of nginx.conf for use in testing
-* in order to avoid sending too many certbot requests to letsencrypt.org while testing, either add `--staging` to the `command: certonly` line in docker-compose.yml or comment out the entire line
-* the certbot_renew.sh script is set to perform a "dry run". In order to perform an actual renewal change this line
+#How to start 
+1) Setup an A Record on your DNS Provider to point to your server ip, wait till DNS propagation is done, in my case it was strapi.newdevsontheblock.com --> XXXX.XXX.XXX
 
-      $COMPOSE run certbot renew --dry-run && $COMPOSE kill -s SIGHUP webserver
-  to this
-  
-      $COMPOSE run certbot renew && $COMPOSE kill -s SIGHUP webserver
-* setup a cron job to run certbot_renew.sh at regular intervals (e.g. weekly)
+2) Change all domain occurens to your domain (if in vscode shift+strg+F to find and replace all)
 
+3) in the nignx config remove the server https part (starts with 
+```server {
+        listen 443 ssl http2;
+        ....
+        }
+        ```
+! because we need dont have the certificates yet
+
+4) once you have removed the https part you can start docker-compose up --> certbot is now starting a challenge and is trying to challenge your nginx webserver. The certification should now be created and available to the nginx container through the shared volumes ( have a look at the certbot section in the docker-compose.yaml --> 
+       - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt)
+      )
+
+4.1) create your own TLS certificate --> `mkdir dhparam`, and 
+       sudo openssl dhparam -out ./dhparam/dhparam-2048.pem 2048
+
+5) go back to the nginx.conf file and paste in the early removed https server section
+
+6) start docker-compose up --build again, nginx should find the certifications and is able to your nodeJS with HTTPS
+
+enjoy your local setup 🍸 - Best wishes - Xamhans
+
+Thanks to jklemke for the repo that I have been using as a template (https://github.com/jklemke/docker-nginx-node)

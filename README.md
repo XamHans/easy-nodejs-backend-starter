@@ -17,7 +17,7 @@ A docker-compose project with these servers:
         listen 443 ssl http2;
         ....
         }
-        ```
+```
 ! because we need dont have the certificates yet
 
 4) once you have removed the https part you can start docker-compose up --> certbot is now starting a challenge and is trying to challenge your nginx webserver. The certification should now be created and available to the nginx container through the shared volumes ( have a look at the certbot section in the docker-compose.yaml --> 

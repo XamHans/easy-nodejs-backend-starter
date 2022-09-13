@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  newdevsontheblock:
+    build:
+      context: ./strapi.newdevsontheblock.com
+      dockerfile: Dockerfile
+    image: newdevsontheblock
+    container_name: newdevsontheblock
+    restart: "no"
+    volumes:
+      - newdevsontheblock-root:/home/node/app/www
+    networks:
+      - app-network
+
+  webserver:
+    image: nginx:mainline-alpine
+    container_name: webserver
+    restart: "no"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - newdevsontheblock-root:/var/www/strapi.newdevsontheblock.com
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - dhparam:/etc/ssl/certs
+    depends_on:
+      - newdevsontheblock
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - newdevsontheblock-root:/var/www/strapi.newdevsontheblock.com
+    depends_on:
+      - webserver
+    command: certonly --webroot --webroot-path=/var/www/strapi.newdevsontheblock.com --email muellerjohannes93@gmail.com --agree-tos --no-eff-email -d strapi.newdevsontheblock.com 
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  newdevsontheblock-root:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/docker-nginx-node/strapi.newdevsontheblock.com/www
+      o: bind
+  dhparam:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/docker-nginx-node/dhparam/
+      o: bind
+
+networks:
+  app-network:
+    driver: bridge
+
+    
+

@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  therahermnodejs:
+    build:
+      context: ./newdevsontheblock.com
+      dockerfile: Dockerfile
+    image: therahermnodejs
+    container_name: therahermnodejs
+    restart: "no"
+    volumes:
+      - newdevsontheblock-root:/home/node/app/www
+    networks:
+      - app-network
+
+  webserver:
+    image: nginx:mainline-alpine
+    container_name: webserver
+    restart: "no"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - newdevsontheblock-root:/var/www/newdevsontheblock.com
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - dhparam:/etc/ssl/certs
+    depends_on:
+      - therahermnodejs
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - newdevsontheblock-root:/var/www/newdevsontheblock.com
+    depends_on:
+      - webserver
+    command: certonly --dry-run --webroot --webroot-path=/var/www/newdevsontheblock.com --email jklemke@grox.com --agree-tos --no-eff-email -d newdevsontheblock.com -d www.newdevsontheblock.com
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  newdevsontheblock-root:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/admin/docker-nginx-node/newdevsontheblock.com/www
+      o: bind
+  dhparam:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/admin/docker-nginx-node/dhparam/
+      o: bind
+
+networks:
+  app-network:
+    driver: bridge
+
+    
+
